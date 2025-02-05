@@ -33,6 +33,7 @@
     function updateCSSVariables() {
       document.documentElement.style.setProperty('--card-width', CARD_WIDTH + 'px');
       document.documentElement.style.setProperty('--card-height', CARD_HEIGHT + 'px');
+      document.documentElement.style.setProperty('--hover-lift', (CARD_HEIGHT * 0.25) + 'px');
     }
     updateCSSVariables();
   
@@ -152,7 +153,7 @@
     function handleDragMove(clientX) {
       if (!isDragging || !isInFanMode) return;
       let delta = clientX - startX;
-      currentAngle = startAngle - delta * 0.2;
+      currentAngle = startAngle - delta * 0.05;
       if (currentAngle < minCurrentAngle) currentAngle = minCurrentAngle;
       if (currentAngle > maxCurrentAngle) currentAngle = maxCurrentAngle;
       const now = performance.now();
@@ -224,16 +225,20 @@
     });
   
     function recalcGeometry() {
-      CARD_SCALE = window.innerHeight / 1080;
-      CARD_WIDTH = baseCardWidth * CARD_SCALE;
-      CARD_HEIGHT = baseCardHeight * CARD_SCALE;
-      RADIUS = baseRadius * CARD_SCALE;
-      updateCSSVariables();
-      ARC_TOP = window.innerHeight * 0.8;
-      cx = window.innerWidth / 2;
-      cy = ARC_TOP + RADIUS;
-      DECK_CENTER_X = window.innerWidth / 2 - CARD_WIDTH / 2;
-      DECK_CENTER_Y = window.innerHeight / 2 - CARD_HEIGHT / 2;
+        // Update scale calculation here too
+        CARD_SCALE = Math.min(
+            window.innerHeight / 1080,
+            window.innerWidth / 1920
+        );
+        CARD_WIDTH = baseCardWidth * CARD_SCALE;
+        CARD_HEIGHT = baseCardHeight * CARD_SCALE;
+        RADIUS = baseRadius * CARD_SCALE;
+        updateCSSVariables();
+        ARC_TOP = window.innerHeight * 0.8;
+        cx = window.innerWidth / 2;
+        cy = ARC_TOP + RADIUS;
+        DECK_CENTER_X = window.innerWidth / 2 - CARD_WIDTH / 2;
+        DECK_CENTER_Y = window.innerHeight / 2 - CARD_HEIGHT / 2;
     }
     window.addEventListener('resize', recalcGeometry);
   

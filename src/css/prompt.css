@@ -18,11 +18,14 @@ html, body {
   
   /* PROMPT ANIMATION – SPLIT INTO WORDS, THEN LETTERS */
   #prompt {
-    font-size: 3.5rem;
+    font-size: calc(2rem + 1vw);
     font-weight: 400;
     margin-bottom: 40px;
     white-space: normal;
-    word-break: break-word;
+    max-width: 90vw;
+    text-align: center;
+    word-wrap: break-word;
+    padding: 0 20px;
   }
   .word {
     display: inline-block;
@@ -67,7 +70,7 @@ html, body {
     color: #fff;
     font-family: 'Spectral', serif;
     font-weight: 300;
-    font-size: 1.4rem;
+    font-size: calc(1.25rem + 0.5vw);  /* Increased from 1rem to 1.25rem */
     line-height: 1.7;
     text-align: center;
     caret-color: #fff;

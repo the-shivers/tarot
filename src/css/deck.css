@@ -41,7 +41,7 @@ html, body {
   }
   
   .card.hovered .card-content {
-    transform: translateY(-30px);
+    transform: translateY(calc(-1 * var(--hover-lift)));
   }
   
   /* Toggle Button Styles */
@@ -57,6 +57,7 @@ html, body {
     border-radius: 8px;
     cursor: pointer;
     font-family: system-ui, sans-serif;
+    font-size: calc(14px + 0.5vw);  /* Responsive font size */
     z-index: 1000;
     transition: background-color 0.2s;
   }
