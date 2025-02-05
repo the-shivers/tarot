@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Spooky Tarot – Animated Prompt Text</title>
+  <!-- Using Cinzel from Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* General page setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0d000f;
+      overflow: hidden;
+    }
+    body {
+      /* Cinzel provides an air of elegance without being over‑the‑top spooky */
+      font-family: 'Cinzel', serif;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* The container for our prompt text */
+    #prompt {
+      position: relative;
+      font-size: 3rem;
+      white-space: nowrap;
+      overflow: hidden;
+      /* Add a little left padding so the first letter isn't clipped when animating */
+      padding-left: 10px;
+    }
+    
+    /* Each character will be animated individually */
+    .char {
+      display: inline-block;
+      opacity: 0;
+      /* Animate from a left offset with blur to the final crisp, properly positioned state */
+      animation: revealChar 1s forwards;
+    }
+    
+    /* The keyframe animation for the reveal effect */
+    @keyframes revealChar {
+      0% {
+        opacity: 0;
+        transform: translateX(-10px);
+        filter: blur(4px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(0);
+        filter: blur(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- The prompt text that will be animated -->
+  <div id="prompt">Ask the tarot an open‑ended question</div>
+  
+  <script>
+    // Grab the prompt element and its text content.
+    const promptEl = document.getElementById('prompt');
+    const text = promptEl.textContent;
+    
+    // Clear the element and then re-add each character wrapped in a span.
+    promptEl.textContent = '';
+    for (let i = 0; i < text.length; i++) {
+      const span = document.createElement('span');
+      // If the character is a space, set it as a non-breaking space
+      if (text[i] === ' ') {
+        span.innerHTML = '&nbsp;';
+      } else {
+        span.textContent = text[i];
+      }
+      span.classList.add('char');
+      // Each character's animation is delayed slightly more than the previous.
+      span.style.animationDelay = (i * 0.02) + 's';
+      promptEl.appendChild(span);
+    }
+  </script>
+</body>
+</html>

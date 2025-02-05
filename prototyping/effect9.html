@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Minimal Ambient Fade‑In</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+    }
+    .input-container {
+      width: 300px;
+      height: 50px;
+      background: #111;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 10px rgba(255,255,255,0);
+      opacity: 0;
+      filter: blur(4px);
+      animation: fadeInGlow 2s forwards;
+    }
+    @keyframes fadeInGlow {
+      0% {
+        opacity: 0;
+        filter: blur(4px);
+        box-shadow: 0 0 10px rgba(255,255,255,0);
+      }
+      100% {
+        opacity: 1;
+        filter: blur(0);
+        box-shadow: 0 0 20px rgba(255,255,255,0.2);
+      }
+    }
+    .input-container input {
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: #fff;
+      font-size: 1.2rem;
+      padding: 0 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="input-container">
+    <input type="text" placeholder="Type your question...">
+  </div>
+</body>
+</html>

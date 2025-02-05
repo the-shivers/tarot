@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spooky Tarot – Animated Prompt & Text Entry</title>
+  <!-- Using Cinzel for the prompt and Merriweather for text entry -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    /* General page setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0d000f;
+      overflow: hidden;
+    }
+    body {
+      /* Use Cinzel for the overall tone (for the prompt and button),
+         but we'll override the text entry font below */
+      font-family: 'Cinzel', serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* The animated prompt text – exactly as before */
+    #prompt {
+      position: relative;
+      font-size: 3rem;
+      white-space: nowrap;
+      overflow: hidden;
+      padding-left: 10px; /* ensures the first letter isn't clipped */
+      margin-bottom: 40px;
+    }
+    .char {
+      display: inline-block;
+      opacity: 0;
+      animation: revealChar 1s forwards;
+    }
+    @keyframes revealChar {
+      0% {
+        opacity: 0;
+        transform: translateX(-10px);
+        filter: blur(4px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(0);
+        filter: blur(0);
+      }
+    }
+    
+    /* Container for text entry elements */
+    #entry-container {
+      width: 600px;
+      max-width: 90%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    /* The text entry area – a borderless, multiline textarea that auto‑expands */
+    #question-input {
+      width: 100%;
+      min-height: 100px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'Merriweather', serif;
+      font-size: 1.5rem;
+      line-height: 1.5;
+      caret-color: #fff; /* ensures the blinking cursor is visible */
+      resize: none;
+      overflow: hidden;
+    }
+    
+    /* When focused, a subtle underline appears */
+    #question-input:focus {
+      border-bottom: 1px solid #fff;
+    }
+    
+    /* Character counter styling */
+    #char-counter {
+      align-self: flex-end;
+      font-size: 0.9rem;
+      opacity: 0.7;
+      margin-top: 5px;
+      display: none;
+    }
+    
+    /* The submit button – initially hidden and color inverts on hover */
+    #submit-btn {
+      margin-top: 20px;
+      padding: 8px 16px;
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      background: transparent;
+      border: 1px solid #fff;
+      color: #fff;
+      cursor: pointer;
+      display: none;
+      transition: background 0.3s, color 0.3s;
+    }
+    #submit-btn:hover {
+      background: #fff;
+      color: #0d000f;
+    }
+  </style>
+</head>
+<body>
+  <!-- The animated prompt remains unchanged -->
+  <div id="prompt">Ask the tarot an open‑ended question</div>
+  
+  <!-- The entry container holds the always‑visible text entry area (with blinking cursor), character counter, and submit button -->
+  <div id="entry-container">
+    <textarea id="question-input" maxlength="400" autofocus></textarea>
+    <div id="char-counter"></div>
+    <button id="submit-btn">Submit</button>
+  </div>
+  
+  <script>
+    // Preserve the original prompt animation: split the text into spans.
+    const promptEl = document.getElementById('prompt');
+    const text = promptEl.textContent;
+    promptEl.textContent = '';
+    for (let i = 0; i < text.length; i++) {
+      const span = document.createElement('span');
+      span.innerHTML = (text[i] === ' ') ? '&nbsp;' : text[i];
+      span.classList.add('char');
+      span.style.animationDelay = (i * 0.02) + 's';
+      promptEl.appendChild(span);
+    }
+    
+    // Auto-resize the textarea to expand vertically as content grows.
+    const questionInput = document.getElementById('question-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const charCounter = document.getElementById('char-counter');
+    const CHAR_LIMIT_THRESHOLD = 320;
+    
+    function autoResize() {
+      questionInput.style.height = 'auto';
+      questionInput.style.height = questionInput.scrollHeight + 'px';
+    }
+    
+    questionInput.addEventListener('input', function() {
+      autoResize();
+      const len = questionInput.value.length;
+      // Show submit button once user types at least 5 characters.
+      submitBtn.style.display = (len >= 5) ? 'block' : 'none';
+      // Show character counter if near the limit.
+      if (len >= CHAR_LIMIT_THRESHOLD) {
+        charCounter.style.display = 'block';
+        charCounter.textContent = len + ' / ' + questionInput.maxLength;
+      } else {
+        charCounter.style.display = 'none';
+      }
+    });
+    
+    // Trigger auto-resize in case there's pre-filled content.
+    autoResize();
+  </script>
+</body>
+</html>

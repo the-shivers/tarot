@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Spooky Tarot – Ask the Deck</title>
+  <style>
+    /* Basic Reset & Spooky Background */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      background: #000; /* dark background */
+      font-family: 'Creepster', cursive; /* a spooky-looking font if available */
+      color: #0f0; /* a glowing green-ish color */
+    }
+    
+    /* A container for all states */
+    #state-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* STATE: Intro – the initial screen */
+    .state {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      display: none;
+    }
+    
+    /* Show the active state */
+    .state.active {
+      display: block;
+    }
+    
+    /* The deck (a stack of cards) positioned at bottom center */
+    #deck {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;  /* width of the deck area */
+      height: 300px; /* height of a card */
+    }
+    
+    /* Each card in the deck. For simplicity we use a simple div.
+       In a real project you might use an image or SVG for the card back. */
+    .card {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: #333;  /* dark card back */
+      border: 2px solid #666;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.6);
+      /* Offset each card just a bit. We'll use a custom property (--offset) */
+    }
+    /* Offset successive cards a little (they overlap but you see the stack) */
+    .card:nth-child(1) { top: 0px; left: 0px; }
+    .card:nth-child(2) { top: 4px; left: 4px; }
+    .card:nth-child(3) { top: 8px; left: 8px; }
+    .card:nth-child(4) { top: 12px; left: 12px; }
+    .card:nth-child(5) { top: 16px; left: 16px; }
+    
+    /* The spooky prompt text (glowing with a smoky effect) */
+    #prompt {
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 2rem;
+      text-align: center;
+      opacity: 0;
+      animation: promptFadeIn 2s forwards;
+    }
+    
+    @keyframes promptFadeIn {
+      0%   { opacity: 0; filter: blur(4px); }
+      100% { opacity: 1; filter: blur(0); }
+    }
+    
+    /* The container for the question input – it will “grow” into view */
+    #questionInput {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      transition: transform 0.8s ease-out;
+    }
+    
+    /* When the input container is active, it scales up to full size */
+    #questionInput.active {
+      transform: translate(-50%, -50%) scale(1);
+    }
+    
+    /* Style the text input */
+    #questionInput input {
+      font-size: 1.5rem;
+      padding: 12px 20px;
+      border: 2px solid #0f0;
+      background: rgba(0,0,0,0.8);
+      color: #0f0;
+      border-radius: 5px;
+      outline: none;
+    }
+    
+    /* (Optional) Spooky animated glow on the input text */
+    @keyframes glow {
+      0% { text-shadow: 0 0 10px #0f0; }
+      50% { text-shadow: 0 0 20px #0f0, 0 0 30px #0f0; }
+      100% { text-shadow: 0 0 10px #0f0; }
+    }
+    #questionInput input {
+      animation: glow 1.5s infinite;
+    }
+  </style>
+</head>
+<body>
+  <div id="state-container">
+    <!-- STATE: Intro (active by default) -->
+    <div id="state-intro" class="state active">
+      <!-- The deck: a stack of 5 cards -->
+      <div id="deck">
+        <div class="card"></div>
+        <div class="card"></div>
+        <div class="card"></div>
+        <div class="card"></div>
+        <div class="card"></div>
+      </div>
+      <!-- The spooky prompt text -->
+      <div id="prompt">Ask the deck an open‑ended question</div>
+      <!-- The question input (hidden until activated) -->
+      <div id="questionInput">
+        <input type="text" placeholder="Type your question here..." />
+      </div>
+    </div>
+    <!-- Future states (e.g., shuffle, fan, card selection) would be added here -->
+  </div>
+  
+  <script>
+    // When the page loads, wait a moment then allow the user to interact.
+    window.addEventListener('load', function() {
+      const inputContainer = document.getElementById('questionInput');
+      const prompt = document.getElementById('prompt');
+      const inputField = inputContainer.querySelector('input');
+      
+      // (For example) When the user clicks the prompt, expand the input.
+      prompt.addEventListener('click', function() {
+        inputContainer.classList.add('active');
+        inputField.focus();
+      });
+      
+      // Optionally, when the user hits "Enter" (or the input loses focus) you could
+      // transition to the next state (e.g., animate the question to the top and show the shuffle button).
+      inputField.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && inputField.value.trim() !== '') {
+          // For now we just log the question.
+          console.log("User's question:", inputField.value);
+          // Later, transition to the shuffle state here.
+          // (For example, you might remove the intro state and show a new state)
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spooky Tarot Reading</title>
+  <!-- Base and module-specific styles -->
+  <link rel="stylesheet" href="src/css/base.css">
+  <link rel="stylesheet" href="src/css/deck.css">
+  <link rel="stylesheet" href="src/css/prompt.css">
+  <!-- Google Fonts for Cinzel & Spectral -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Spectral:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Prompt view: initially visible -->
+  <div id="prompt-view">
+    <div id="prompt">Ask the tarot an open‑ended question</div>
+    <div id="entry-container">
+      <textarea id="question-input" maxlength="400" autofocus placeholder="Enter your question here..."></textarea>
+      <div id="char-counter"></div>
+      <button id="submit-btn">Submit</button>
+    </div>
+  </div>
+  <!-- Deck view: initially hidden -->
+  <div id="deck-view" class="hidden">
+    <div id="viewport">
+      <div id="deck"></div>
+    </div>
+    <button id="toggle-view">Fan Cards</button>
+  </div>
+
+  <!-- JavaScript modules (order is important if one module depends on another) -->
+  <script src="src/js/prompt.js"></script>
+  <script src="src/js/deck.js"></script>
+  <script src="src/js/main.js"></script>
+</body>
+</html>

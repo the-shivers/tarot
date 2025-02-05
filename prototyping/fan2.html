@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Tarot Card Selector – With Deck-to-Fan Animation</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #2c2c2c;
+      touch-action: none;
+    }
+    #viewport {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #deck {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .card {
+      position: absolute;
+      width: var(--card-width, 175px);
+      height: var(--card-height, 300px);
+      transform-origin: center center;
+      backface-visibility: hidden;
+      cursor: pointer;
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease-out;
+    }
+    .card-content {
+      transition: transform 0.2s ease-out;
+    }
+    .card.hovered {
+      filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.25));
+      z-index: 100;
+    }
+    .card.hovered .card-content {
+      transform: translateY(-30px);
+    }
+    
+    /* Toggle Button Styles */
+    #toggle-view {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      background: #1A1E2E;
+      color: white;
+      border: 2px solid #2F375A;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: system-ui, sans-serif;
+      z-index: 1000;
+      transition: background-color 0.2s;
+    }
+    #toggle-view:hover {
+      background: #2F375A;
+    }
+  </style>
+</head>
+<body>
+  <div id="viewport">
+    <div id="deck"></div>
+  </div>
+  <button id="toggle-view">Fan Cards</button>
+  
+  <script>
+    /* ─── CONFIGURATION & GLOBALS ────────────────────────────────────────────── */
+    let TOTAL_CARDS = 78;
+    let baseCardWidth = 175;
+    let baseCardHeight = 300;
+    let baseRadius = 2400;
+    
+    let CARD_SCALE = window.innerHeight / 1080;
+    let CARD_WIDTH = baseCardWidth * CARD_SCALE;
+    let CARD_HEIGHT = baseCardHeight * CARD_SCALE;
+    let RADIUS = baseRadius * CARD_SCALE;
+    let BASE_ANGLE = 180 / (TOTAL_CARDS - 1) / 4;
+    
+    let ARC_TOP = window.innerHeight * 0.8;
+    let cx = window.innerWidth / 2;
+    let cy = ARC_TOP + RADIUS;
+    
+    const minCurrentAngle = -80;
+    const maxCurrentAngle = -45;
+    let currentAngle = (minCurrentAngle + maxCurrentAngle) / 2;
+    let momentum = 0;
+    let lastTime = performance.now();
+    
+    // New state management
+    let isInFanMode = false;
+    let isAnimating = false;
+    
+    /* ─── DECK MODE CONFIGURATION ────────────────────────────────────────────── */
+    const DECK_CENTER_X = window.innerWidth / 2 - CARD_WIDTH / 2;
+    const DECK_CENTER_Y = window.innerHeight / 2 - CARD_HEIGHT / 2;
+    const STACK_OFFSET = 0.3; // Pixels to offset each card in the stack
+    
+    function updateCSSVariables() {
+      document.documentElement.style.setProperty('--card-width', CARD_WIDTH + 'px');
+      document.documentElement.style.setProperty('--card-height', CARD_HEIGHT + 'px');
+    }
+    updateCSSVariables();
+    
+    const deck = document.getElementById('deck');
+    
+    /* ─── CARD CREATION ───────────────────────────────────────────────────────── */
+    function createCard(i) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-content">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 600">
+            <rect width="350" height="600" fill="#1A1E2E" rx="20" ry="20"/>
+            <rect x="8" y="8" width="334" height="584" fill="#2F375A" rx="12" ry="12"/>
+            <defs>
+              <pattern id="pattern-${i}" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                <line x1="0" y1="0" x2="20" y2="20" stroke="#2F375A" stroke-width="1.5"/>
+                <line x1="20" y1="0" x2="0" y2="20" stroke="#2F375A" stroke-width="1.5"/>
+                <circle cx="0" cy="0" r="2" fill="#2F375A"/>
+                <circle cx="20" cy="0" r="2" fill="#2F375A"/>
+                <circle cx="0" cy="20" r="2" fill="#2F375A"/>
+                <circle cx="20" cy="20" r="2" fill="#2F375A"/>
+                <circle cx="10" cy="10" r="2" fill="#2F375A"/>
+              </pattern>
+            </defs>
+            <rect x="12" y="12" width="326" height="576" fill="#1A1E2E" rx="8" ry="8"/>
+            <rect x="12" y="12" width="326" height="576" fill="url(#pattern-${i})" rx="8" ry="8"/>
+          </svg>
+        </div>
+      `;
+      return card;
+    }
+    
+    for (let i = 0; i < TOTAL_CARDS; i++) {
+      deck.appendChild(createCard(i));
+    }
+    
+    function degToRad(deg) {
+      return deg * Math.PI / 180;
+    }
+    
+    /* ─── CARD POSITIONING FUNCTIONS ────────────────────────────────────────────── */
+    function getStackPosition(index) {
+      return {
+        x: DECK_CENTER_X + index * STACK_OFFSET,
+        y: DECK_CENTER_Y + index * STACK_OFFSET,
+        rotation: 0
+      };
+    }
+    
+    function getFanPosition(index) {
+      // Restore the original fan positioning logic
+      let rawAngle = index * BASE_ANGLE - currentAngle;
+      let A = rawAngle - 180;
+      const rad = degToRad(A);
+      
+      // Calculate position on the circle
+      const x = cx + RADIUS * Math.cos(rad);
+      const y = cy + RADIUS * Math.sin(rad);
+      
+      // Adjust for card dimensions and round to prevent subpixel rendering
+      return {
+        x: Math.round(x - CARD_WIDTH / 2),
+        y: Math.round(y - CARD_HEIGHT / 2),
+        rotation: A + 90
+      };
+    }
+    
+    /* ─── ANIMATION AND UPDATE LOOP ──────────────────────────────────────────────── */
+    function updateCards() {
+      const now = performance.now();
+      const dt = now - lastTime;
+      lastTime = now;
+      
+      if (!isDragging && momentum !== 0 && isInFanMode) {
+        currentAngle += momentum * dt * 0.001;
+        momentum *= Math.pow(0.9, dt / 16);
+        if (Math.abs(momentum) < 0.01) momentum = 0;
+        
+        if (currentAngle < minCurrentAngle) { currentAngle = minCurrentAngle; momentum = 0; }
+        if (currentAngle > maxCurrentAngle) { currentAngle = maxCurrentAngle; momentum = 0; }
+      }
+      
+      let hoveredCard = null;
+      if (lastMouseX >= 0 && lastMouseY >= 0) {
+        let el = document.elementFromPoint(lastMouseX, lastMouseY);
+        while (el && el !== document.body) {
+          if (el.classList && el.classList.contains('card')) {
+            hoveredCard = el;
+            break;
+          }
+          el = el.parentElement;
+        }
+      }
+      
+      document.querySelectorAll('.card').forEach((card, i) => {
+        const pos = isInFanMode ? getFanPosition(i) : getStackPosition(i);
+        const tx = Math.round(pos.x);
+        const ty = Math.round(pos.y);
+        
+        card.style.transform = `translate(${tx}px, ${ty}px) rotate(${pos.rotation}deg)`;
+        // In fan mode, higher indices should be on top
+// In stack mode, lower indices should be on bottom
+card.style.zIndex = isInFanMode ? i : i;
+        
+        if (card === hoveredCard && isInFanMode) {
+          card.classList.add('hovered');
+        } else {
+          card.classList.remove('hovered');
+        }
+      });
+      
+      requestAnimationFrame(updateCards);
+    }
+    requestAnimationFrame(updateCards);
+    
+    /* ─── INPUT HANDLING ────────────────────────────────────────────────────────── */
+    let isDragging = false;
+    let startX = 0;
+    let startAngle = 0;
+    let velocity = 0;
+    let lastDragPos = 0;
+    let lastDragTime = performance.now();
+    let lastMouseX = -1, lastMouseY = -1;
+    
+    function handleDragStart(clientX) {
+      if (!isInFanMode) return;
+      isDragging = true;
+      startX = clientX;
+      startAngle = currentAngle;
+      velocity = 0;
+      lastDragPos = currentAngle;
+      lastDragTime = performance.now();
+    }
+    
+    function handleDragMove(clientX) {
+      if (!isDragging || !isInFanMode) return;
+      let delta = clientX - startX;
+      currentAngle = startAngle - delta * 0.2;
+      
+      if (currentAngle < minCurrentAngle) currentAngle = minCurrentAngle;
+      if (currentAngle > maxCurrentAngle) currentAngle = maxCurrentAngle;
+      
+      const now = performance.now();
+      const dt = now - lastDragTime;
+      if (dt > 0) {
+        velocity = (currentAngle - lastDragPos) / dt;
+        lastDragPos = currentAngle;
+        lastDragTime = now;
+      }
+    }
+    
+    function handleDragEnd() {
+      if (!isInFanMode) return;
+      isDragging = false;
+      momentum = velocity * 1000;
+    }
+    
+    document.addEventListener('mousedown', (e) => {
+      handleDragStart(e.clientX);
+      if (isInFanMode) document.body.style.cursor = 'grabbing';
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      handleDragMove(e.clientX);
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+    });
+    
+    document.addEventListener('mouseup', () => {
+      handleDragEnd();
+      document.body.style.cursor = 'default';
+    });
+    
+    document.addEventListener('touchstart', (e) => {
+      handleDragStart(e.touches[0].clientX);
+    }, { passive: false });
+    
+    document.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      handleDragMove(e.touches[0].clientX);
+      lastMouseX = e.touches[0].clientX;
+      lastMouseY = e.touches[0].clientY;
+    }, { passive: false });
+    
+    document.addEventListener('touchend', handleDragEnd);
+    
+    window.addEventListener('wheel', (e) => {
+      if (!isInFanMode) return;
+      e.preventDefault();
+      // Restore original momentum calculation for smooth scrolling
+      momentum += e.deltaY * 0.3;
+      
+      // Clamp momentum for smoother control
+      momentum = Math.max(Math.min(momentum, 100), -100);
+    }, { passive: false });
+    
+    /* ─── VIEW TOGGLE HANDLING ─────────────────────────────────────────────────── */
+    const toggleButton = document.getElementById('toggle-view');
+    
+    toggleButton.addEventListener('click', () => {
+      if (isAnimating) return;
+      
+      isInFanMode = !isInFanMode;
+      toggleButton.textContent = isInFanMode ? 'Stack Cards' : 'Fan Cards';
+      
+      // Reset momentum and dragging state when switching modes
+      momentum = 0;
+      isDragging = false;
+    });
+    
+    /* ─── RESIZE HANDLING ───────────────────────────────────────────────────────── */
+    function recalcGeometry() {
+      CARD_SCALE = window.innerHeight / 1080;
+      CARD_WIDTH = baseCardWidth * CARD_SCALE;
+      CARD_HEIGHT = baseCardHeight * CARD_SCALE;
+      RADIUS = baseRadius * CARD_SCALE;
+      updateCSSVariables();
+      
+      ARC_TOP = window.innerHeight * 0.8;
+      cx = window.innerWidth / 2;
+      cy = ARC_TOP + RADIUS;
+      
+      // Update deck center position
+      DECK_CENTER_X = window.innerWidth / 2 - CARD_WIDTH / 2;
+      DECK_CENTER_Y = window.innerHeight / 2 - CARD_HEIGHT / 2;
+    }
+    
+    window.addEventListener('resize', recalcGeometry);
+  </script>
+</body>
+</html>

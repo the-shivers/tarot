@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spooky Tarot – Animated Prompt & Text Entry</title>
+  <!-- Using Cinzel for the prompt/submit and Lora for text entry -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* General page setup */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0d000f;
+      overflow: hidden;
+    }
+    body {
+      font-family: 'Cinzel', serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Animated prompt styling (heading) */
+    #prompt {
+      position: relative;
+      font-size: 3.5rem;  /* increased size for stronger hierarchy */
+      font-weight: 400;
+      white-space: nowrap;
+      overflow: hidden;
+      padding-left: 10px; /* ensures the first letter isn’t clipped */
+      margin-bottom: 40px;
+    }
+    .char {
+      display: inline-block;
+      opacity: 0;
+      animation: revealChar 1s forwards;
+    }
+    @keyframes revealChar {
+      0% {
+        opacity: 0;
+        transform: translateX(-10px);
+        filter: blur(4px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(0);
+        filter: blur(0);
+      }
+    }
+    
+    /* Container for text entry elements */
+    #entry-container {
+      width: 600px;
+      max-width: 90%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      padding-bottom: 60px; /* reserve space for the submit button */
+    }
+    
+    /* Text entry area (textarea) – now using Lora with increased line spacing and centered text */
+    #question-input {
+      width: 100%;
+      min-height: 100px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'Lora', serif;
+      font-size: 1.2rem;
+      line-height: 1.7; /* increased line spacing */
+      text-align: center;
+      caret-color: #fff; /* blinking cursor remains white */
+      resize: none;
+      overflow: hidden;
+    }
+    /* Remove any focus border */
+    #question-input:focus {
+      border-bottom: none;
+    }
+    
+    /* Character counter styling */
+    #char-counter {
+      align-self: flex-end;
+      font-size: 0.9rem;
+      opacity: 0.7;
+      margin-top: 5px;
+      display: none;
+      color: #fff;
+    }
+    
+    /* Submit button styling – space is reserved so nothing shifts, and it fades in */
+    #submit-btn {
+      margin-top: 20px;
+      padding: 8px 16px;
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      background: transparent;
+      border: 1px solid #fff;
+      color: #fff;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.5s ease, background 0.3s, color 0.3s;
+      pointer-events: none;
+    }
+    #submit-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #submit-btn:hover {
+      background: #fff;
+      color: #0d000f;
+    }
+  </style>
+</head>
+<body>
+  <!-- The animated prompt (heading) remains unchanged -->
+  <div id="prompt">Ask the tarot an open‑ended question</div>
+  
+  <!-- The entry container holds the text entry area, character counter, and submit button -->
+  <div id="entry-container">
+    <textarea id="question-input" maxlength="400" autofocus></textarea>
+    <div id="char-counter"></div>
+    <button id="submit-btn">Submit</button>
+  </div>
+  
+  <script>
+    // Preserve the prompt animation by splitting its text into spans.
+    const promptEl = document.getElementById('prompt');
+    const text = promptEl.textContent;
+    promptEl.textContent = '';
+    for (let i = 0; i < text.length; i++) {
+      const span = document.createElement('span');
+      span.innerHTML = (text[i] === ' ') ? '&nbsp;' : text[i];
+      span.classList.add('char');
+      span.style.animationDelay = (i * 0.02) + 's';
+      promptEl.appendChild(span);
+    }
+    
+    // Auto-resize the textarea as content grows.
+    const questionInput = document.getElementById('question-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const charCounter = document.getElementById('char-counter');
+    const CHAR_LIMIT_THRESHOLD = 320;
+    const MAX_LENGTH = questionInput.maxLength;
+    
+    function autoResize() {
+      questionInput.style.height = 'auto';
+      questionInput.style.height = questionInput.scrollHeight + 'px';
+    }
+    
+    questionInput.addEventListener('input', function() {
+      autoResize();
+      const len = questionInput.value.length;
+      // Show the submit button once the user types at least 5 characters.
+      if (len >= 5) {
+        submitBtn.classList.add('visible');
+      } else {
+        submitBtn.classList.remove('visible');
+      }
+      // Show the character counter if near the limit.
+      if (len >= CHAR_LIMIT_THRESHOLD) {
+        charCounter.style.display = 'block';
+        charCounter.textContent = len + ' / ' + MAX_LENGTH;
+        // Change counter color to red when only 10 characters remain.
+        if (MAX_LENGTH - len <= 10) {
+          charCounter.style.color = 'red';
+        } else {
+          charCounter.style.color = '#fff';
+        }
+      } else {
+        charCounter.style.display = 'none';
+      }
+    });
+    
+    // Trigger auto-resize initially in case of pre-filled content.
+    autoResize();
+  </script>
+</body>
+</html>

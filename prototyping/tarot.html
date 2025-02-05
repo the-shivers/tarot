@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Tarot Card Selector</title>
+  <style>
+    /* Prevent any native scrolling/panning */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #2c2c2c;
+      touch-action: none;
+    }
+    /* The viewport is fixed and establishes perspective */
+    #viewport {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      perspective: 1000px;
+      overflow: hidden;
+    }
+    /* 
+      Change the deck container to fixed so it never moves.
+      (Its children will be positioned absolutely relative to the viewport.)
+    */
+    #deck {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .card {
+      position: absolute;
+      width: 175px;
+      height: 300px;
+      transform-origin: center center;
+      transition: transform 0.2s ease-out;
+      cursor: pointer;
+      will-change: transform;
+      backface-visibility: hidden;
+    }
+    /* The hovered card gets a glowing border */
+    .card.hovered {
+      filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
+    }
+  </style>
+</head>
+<body>
+  <div id="viewport">
+    <div id="deck"></div>
+  </div>
+  <script>
+    // ===== Configuration & Globals =====
+    const deck = document.getElementById('deck');
+    const TOTAL_CARDS = 78;
+    const RADIUS = 600; // Adjust for a tighter or wider arc.
+    const BASE_ANGLE = 180 / (TOTAL_CARDS - 1);  // Cards span 180° when no scrolling offset.
+    
+    let currentAngle = 0;  // This value is modified by dragging/scrolling.
+    let momentum = 0;
+    let lastTime = performance.now();
+    
+    let isDragging = false;
+    let startX = 0;
+    let startAngle = 0;
+    let velocity = 0;
+    let lastDragPos = 0;
+    let lastDragTime = performance.now();
+    
+    // For hover detection.
+    let lastMouseX = -1, lastMouseY = -1;
+    
+    // ===== Fixed Circle Center (Updated on resize) =====
+    // We want the center card (which should be vertical) to appear exactly at the viewport’s center.
+    // We define our circle so that its top (at –90°) is exactly at viewport center.
+    // That is, if (cx,cy) is the circle’s center, then:
+    //    (cx, cy – RADIUS) = (viewportCenterX, viewportCenterY)
+    // Hence, we set:
+    //    cx = viewportCenterX,  cy = viewportCenterY + RADIUS.
+    let cx = window.innerWidth / 2;
+    let viewportCenterY = window.innerHeight / 2;
+    let cy = viewportCenterY + RADIUS;
+    
+    window.addEventListener('resize', () => {
+      cx = window.innerWidth / 2;
+      viewportCenterY = window.innerHeight / 2;
+      cy = viewportCenterY + RADIUS;
+    });
+    
+    // ===== Card Creation =====
+    function createCard(i) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 600">
+          <rect width="350" height="600" fill="#1A1E2E" rx="20" ry="20"/>
+          <rect x="8" y="8" width="334" height="584" fill="#2F375A" rx="12" ry="12"/>
+          <defs>
+            <pattern id="pattern-${i}" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+              <line x1="0" y1="0" x2="20" y2="20" stroke="#2F375A" stroke-width="1.5"/>
+              <line x1="20" y1="0" x2="0" y2="20" stroke="#2F375A" stroke-width="1.5"/>
+              <circle cx="0" cy="0" r="2" fill="#2F375A"/>
+              <circle cx="20" cy="0" r="2" fill="#2F375A"/>
+              <circle cx="0" cy="20" r="2" fill="#2F375A"/>
+              <circle cx="20" cy="20" r="2" fill="#2F375A"/>
+              <circle cx="10" cy="10" r="2" fill="#2F375A"/>
+            </pattern>
+          </defs>
+          <rect x="12" y="12" width="326" height="576" fill="#1A1E2E" rx="8" ry="8"/>
+          <rect x="12" y="12" width="326" height="576" fill="url(#pattern-${i})" rx="8" ry="8"/>
+        </svg>
+      `;
+      return card;
+    }
+    
+    // Create and append all cards.
+    for (let i = 0; i < TOTAL_CARDS; i++) {
+      deck.appendChild(createCard(i));
+    }
+    
+    // ===== Main Animation Loop =====
+    function updateCards() {
+      const now = performance.now();
+      const dt = now - lastTime;
+      lastTime = now;
+      
+      // Apply momentum when not dragging.
+      if (!isDragging && momentum !== 0) {
+        currentAngle += momentum * dt * 0.001;
+        momentum *= Math.pow(0.9, dt / 16);
+        if (Math.abs(momentum) < 0.01) momentum = 0;
+      }
+      
+      // Clamp currentAngle so the leftmost/rightmost cards never pass 12 o’clock.
+      if (currentAngle < -90) { currentAngle = -90; momentum = 0; }
+      if (currentAngle > 90) { currentAngle = 90; momentum = 0; }
+      
+      // Use elementFromPoint to identify the one card under the pointer.
+      let hoveredCard = null;
+      if (lastMouseX >= 0 && lastMouseY >= 0) {
+        let el = document.elementFromPoint(lastMouseX, lastMouseY);
+        while (el && el !== document.body) {
+          if (el.classList && el.classList.contains('card')) {
+            hoveredCard = el;
+            break;
+          }
+          el = el.parentElement;
+        }
+      }
+      
+      // Update each card’s position along the circle.
+      // For each card, we first compute its “raw angle”:
+      //    rawAngle runs from 0° (leftmost) to 180° (rightmost) when currentAngle is 0.
+      // Then we shift by 180° so that the card which should be centered (rawAngle = 90)
+      // ends up at an angle of –90° on our circle (i.e. the top, where it will be vertical).
+      document.querySelectorAll('.card').forEach((card, i) => {
+        let rawAngle = i * BASE_ANGLE - currentAngle;
+        let A = rawAngle - 180;  // Shift the arc so that rawAngle=90 becomes A=-90.
+        const rad = A * Math.PI / 180;
+        // Compute (x,y) on the circle.
+        const x = cx + RADIUS * Math.cos(rad);
+        const y = cy + RADIUS * Math.sin(rad);
+        // The tangent (rotation) is A + 90, so that when A = –90 the card’s rotation is 0.
+        const rotation = A + 90;
+        // If this card is hovered, apply an extra upward offset (pop-up effect).
+        const hoverOffset = (card === hoveredCard) ? -30 : 0;
+        // Center the card (its dimensions are 175×300).
+        card.style.transform = `translate(${x - 175/2}px, ${y - 300/2 + hoverOffset}px) rotate(${rotation}deg)`;
+      });
+      
+      requestAnimationFrame(updateCards);
+    }
+    requestAnimationFrame(updateCards);
+    
+    // ===== Input Handling =====
+    function handleDragStart(clientX) {
+      isDragging = true;
+      startX = clientX;
+      startAngle = currentAngle;
+      velocity = 0;
+      lastDragPos = currentAngle;
+      lastDragTime = performance.now();
+    }
+    function handleDragMove(clientX) {
+      if (!isDragging) return;
+      const delta = clientX - startX;
+      currentAngle = startAngle + delta * 0.3;
+      if (currentAngle < -90) currentAngle = -90;
+      if (currentAngle > 90) currentAngle = 90;
+      const now = performance.now();
+      const dt = now - lastDragTime;
+      if (dt > 0) {
+        velocity = (currentAngle - lastDragPos) / dt;
+        lastDragPos = currentAngle;
+        lastDragTime = now;
+      }
+    }
+    function handleDragEnd() {
+      isDragging = false;
+      momentum = velocity * 1000;
+    }
+    
+    // Mouse events
+    document.addEventListener('mousedown', (e) => {
+      handleDragStart(e.clientX);
+      document.body.style.cursor = 'grabbing';
+    });
+    document.addEventListener('mousemove', (e) => {
+      handleDragMove(e.clientX);
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+    });
+    document.addEventListener('mouseup', () => {
+      handleDragEnd();
+      document.body.style.cursor = 'default';
+    });
+    
+    // Touch events (with preventDefault to block native scrolling)
+    document.addEventListener('touchstart', (e) => {
+      handleDragStart(e.touches[0].clientX);
+    }, { passive: false });
+    document.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      handleDragMove(e.touches[0].clientX);
+      lastMouseX = e.touches[0].clientX;
+      lastMouseY = e.touches[0].clientY;
+    }, { passive: false });
+    document.addEventListener('touchend', handleDragEnd);
+    
+    // Wheel event for desktop scrolling.
+    window.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      momentum += e.deltaY * 0.3;
+    }, { passive: false });
+  </script>
+</body>
+</html>

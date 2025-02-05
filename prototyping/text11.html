@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spooky Tarot – Animated Prompt & Text Entry</title>
+  <!-- Using Cinzel for the prompt/submit and Spectral for text entry -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Spectral:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    /* GENERAL PAGE SETUP */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0d000f;
+      overflow: hidden;
+    }
+    body {
+      font-family: 'Cinzel', serif;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 20px;
+      text-align: center;
+    }
+    
+    /* PROMPT ANIMATION – SPLIT INTO WORDS, THEN LETTERS */
+    #prompt {
+      font-size: 3.5rem;
+      font-weight: 400;
+      margin-bottom: 40px;
+      white-space: normal;
+      word-break: break-word;
+    }
+    .word {
+      display: inline-block;
+    }
+    .char {
+      display: inline-block;
+      opacity: 0;
+      animation: revealChar 1s forwards;
+    }
+    @keyframes revealChar {
+      0% {
+        opacity: 0;
+        transform: translateX(-10px);
+        filter: blur(4px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(0);
+        filter: blur(0);
+      }
+    }
+    
+    /* ENTRY CONTAINER */
+    #entry-container {
+      width: 600px;
+      max-width: 90%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      padding-bottom: 60px;
+    }
+    
+    /* TEXT ENTRY AREA – using Spectral (lightweight) */
+    #question-input {
+      width: 100%;
+      min-height: 100px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'Spectral', serif;
+      font-weight: 300;
+      font-size: 1.4rem;
+      line-height: 1.7;
+      text-align: center;
+      caret-color: #fff;
+      resize: none;
+      overflow: hidden;
+    }
+    #question-input::placeholder {
+      color: rgba(255,255,255,0.3);
+      text-align: center;
+    }
+    #question-input:focus::placeholder {
+      color: transparent;
+    }
+    
+    /* CHARACTER COUNTER */
+    #char-counter {
+      align-self: flex-end;
+      font-size: 0.9rem;
+      opacity: 0.7;
+      margin-top: 5px;
+      display: none;
+      color: #fff;
+    }
+    
+    /* SUBMIT BUTTON – reserved space, initially invisible */
+    #submit-btn {
+      margin-top: 20px;
+      padding: 8px 16px;
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      background: transparent;
+      border: 1px solid #fff;
+      color: #fff;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.5s ease, background 0.3s, color 0.3s;
+      pointer-events: none;
+      position: relative;
+      overflow: hidden;
+    }
+    #submit-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #submit-btn:hover {
+      background: #fff;
+      color: #0d000f;
+    }
+    
+    /* RIPPLE EFFECT – now created as a fixed element, sized to the button */
+    .ripple-effect {
+      position: fixed;
+      border: 2px solid #fff;
+      box-sizing: border-box;
+      z-index: 9999;
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+      pointer-events: none;
+      animation: rippleAnim 0.3s forwards;
+    }
+    @keyframes rippleAnim {
+      0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(2);
+        opacity: 0;
+      }
+    }
+    
+    /* FADE-OUT EFFECT */
+    .fade-out {
+      opacity: 0;
+      transition: opacity 1s ease-out;
+    }
+  </style>
+</head>
+<body>
+  <!-- PROMPT -->
+  <div id="prompt">Ask the tarot an open‑ended question</div>
+  
+  <!-- ENTRY CONTAINER -->
+  <div id="entry-container">
+    <textarea id="question-input" maxlength="400" autofocus placeholder="Enter your question here..."></textarea>
+    <div id="char-counter"></div>
+    <button id="submit-btn">Submit</button>
+  </div>
+  
+  <script>
+    /* PROMPT ANIMATION – SPLIT TEXT INTO WORDS, THEN LETTERS */
+    (function animatePrompt() {
+      const promptEl = document.getElementById('prompt');
+      const promptText = promptEl.textContent;
+      promptEl.textContent = '';
+      const words = promptText.split(' ');
+      let globalIndex = 0;
+      words.forEach((word, index) => {
+        const wordSpan = document.createElement('span');
+        wordSpan.className = 'word';
+        for (let i = 0; i < word.length; i++) {
+          const letterSpan = document.createElement('span');
+          letterSpan.className = 'char';
+          letterSpan.textContent = word[i];
+          letterSpan.style.animationDelay = (globalIndex * 0.02) + 's';
+          globalIndex++;
+          wordSpan.appendChild(letterSpan);
+        }
+        if (index < words.length - 1) {
+          wordSpan.appendChild(document.createTextNode('\u00A0'));
+        }
+        promptEl.appendChild(wordSpan);
+      });
+    })();
+    
+    /* AUTO-RESIZE TEXTAREA */
+    const questionInput = document.getElementById('question-input');
+    const submitBtn = document.getElementById('submit-btn');
+    const charCounter = document.getElementById('char-counter');
+    const CHAR_LIMIT_THRESHOLD = 320;
+    const MAX_LENGTH = questionInput.maxLength;
+    
+    function autoResize() {
+      questionInput.style.height = 'auto';
+      questionInput.style.height = questionInput.scrollHeight + 'px';
+    }
+    
+    questionInput.addEventListener('input', function() {
+      autoResize();
+      const len = questionInput.value.length;
+      if (len >= 5) {
+        submitBtn.classList.add('visible');
+      } else {
+        submitBtn.classList.remove('visible');
+      }
+      if (len >= CHAR_LIMIT_THRESHOLD) {
+        charCounter.style.display = 'block';
+        charCounter.textContent = len + ' / ' + MAX_LENGTH;
+        if (MAX_LENGTH - len <= 10) {
+          charCounter.style.color = 'red';
+        } else {
+          charCounter.style.color = '#fff';
+        }
+      } else {
+        charCounter.style.display = 'none';
+      }
+    });
+    
+    autoResize();
+    
+    /* SUBMIT BUTTON: RIPPLE EFFECT & FADE-OUT */
+    submitBtn.addEventListener('click', function() {
+      // Get the button's bounding rectangle.
+      const rect = submitBtn.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      // Create the ripple element.
+      const ripple = document.createElement('div');
+      ripple.className = 'ripple-effect';
+      // Set the ripple's size to match the button exactly.
+      ripple.style.width = rect.width + 'px';
+      ripple.style.height = rect.height + 'px';
+      // Position it at the center of the button.
+      ripple.style.left = centerX + 'px';
+      ripple.style.top = centerY + 'px';
+      
+      document.body.appendChild(ripple);
+      
+      // Remove the ripple element after the animation completes.
+      setTimeout(() => {
+        ripple.remove();
+      }, 400);
+      
+      // After a 0.5s delay, fade out the prompt and entry container.
+      setTimeout(() => {
+        document.getElementById('prompt').classList.add('fade-out');
+        document.getElementById('entry-container').classList.add('fade-out');
+        // Further actions (such as transitioning to the next view) can follow.
+      }, 100);
+    });
+  </script>
+</body>
+</html>
