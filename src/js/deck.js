@@ -263,7 +263,7 @@
         
         if (width <= 768) {
             console.log('Mobile mode activated');
-            CARD_SCALE = Math.min(heightScale, widthScale) * 1.5;
+            CARD_SCALE = Math.min(heightScale, widthScale) * 2.5;
         } else {
             console.log('Desktop mode activated');
             CARD_SCALE = Math.min(heightScale, widthScale);
