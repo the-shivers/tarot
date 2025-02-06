@@ -107,6 +107,8 @@ html, body {
     pointer-events: none;
     position: relative;
     overflow: hidden;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
   #submit-btn.visible {
     opacity: 1;

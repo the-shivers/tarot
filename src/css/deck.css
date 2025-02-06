@@ -28,11 +28,15 @@ html, body {
     backface-visibility: hidden;
     cursor: pointer;
     filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
-    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease-out;
+    transition: transform 0.8s cubic-bezier(0.2, 0, 0.2, 1), filter 0.3s ease-out;
+    will-change: transform, filter;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
   
   .card-content {
-    transition: transform 0.2s ease-out;
+    transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1);
+    will-change: transform;
   }
   
   .card.hovered {
@@ -54,15 +58,43 @@ html, body {
     font-family: 'Cinzel', serif;
     font-size: calc(1.2rem + 0.5vw);
     background: transparent;
-    border: 1px solid #fff;
     color: #fff;
+    border: 1px solid #fff;
     cursor: pointer;
     z-index: 1000;
     transition: background 0.3s, color 0.3s;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
   }
   
-  #toggle-view:hover {
+  /* Card hover effects - these should NOT be inside a media query */
+  .card.hovered {
+    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.25));
+    z-index: 100;
+  }
+  
+  .card.hovered .card-content {
+    transform: translateY(calc(-1 * var(--hover-lift)));
+  }
+  
+  /* Button hover effects only for desktop */
+  @media (hover: hover) {
+    #toggle-view:hover {
+        background: #fff;
+        color: #0d000f;
+    }
+  }
+  
+  /* For mobile, ONLY show white during the actual press */
+  #toggle-view:active {
     background: #fff;
     color: #0d000f;
+  }
+  
+  /* Explicitly reset on focus */
+  #toggle-view:focus {
+    background: transparent;
+    color: #fff;
   }
   

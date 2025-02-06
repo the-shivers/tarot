@@ -34,6 +34,7 @@
       document.documentElement.style.setProperty('--card-width', CARD_WIDTH + 'px');
       document.documentElement.style.setProperty('--card-height', CARD_HEIGHT + 'px');
       document.documentElement.style.setProperty('--hover-lift', (CARD_HEIGHT * 0.25) + 'px');
+      document.documentElement.style.setProperty('--card-hover-transition', '0.15s');
     }
     updateCSSVariables();
   
@@ -45,9 +46,23 @@
     function createCard(i) {
       const card = document.createElement('div');
       card.className = 'card';
-      // Replace "{patternId}" in the template with a unique id, e.g. "pattern-0", "pattern-1", etc.
+      card.style.touchAction = 'none';
       const svgContent = cardSvgTemplate.replace(/{patternId}/g, 'pattern-' + i);
       card.innerHTML = `<div class="card-content">${svgContent}</div>`;
+      
+      // Only add hover effect when in fan mode
+      card.addEventListener('mouseenter', () => {
+          if (isInFanMode) {
+              card.classList.add('hovered');
+          }
+      });
+      
+      card.addEventListener('mouseleave', () => {
+          if (isInFanMode) {
+              card.classList.remove('hovered');
+          }
+      });
+      
       return card;
     }
 
@@ -92,41 +107,51 @@
   
     function updateCards() {
       const now = performance.now();
-      const dt = now - lastTime;
+      const dt = Math.min(now - lastTime, 32);
       lastTime = now;
   
       if (!isDragging && momentum !== 0 && isInFanMode) {
         currentAngle += momentum * dt * 0.001;
-        momentum *= Math.pow(0.9, dt / 16);
+        momentum *= Math.pow(0.95, dt / 16);
         if (Math.abs(momentum) < 0.01) momentum = 0;
         if (currentAngle < minCurrentAngle) { currentAngle = minCurrentAngle; momentum = 0; }
         if (currentAngle > maxCurrentAngle) { currentAngle = maxCurrentAngle; momentum = 0; }
       }
   
-      let hoveredCard = null;
-      if (lastMouseX >= 0 && lastMouseY >= 0) {
-        let el = document.elementFromPoint(lastMouseX, lastMouseY);
-        while (el && el !== document.body) {
-          if (el.classList && el.classList.contains('card')) {
-            hoveredCard = el;
-            break;
+      const cards = document.querySelectorAll('.card');
+      const positions = [];
+      
+      cards.forEach((card, i) => {
+        const pos = isInFanMode ? getFanPosition(i) : getStackPosition(i);
+        positions.push(pos);
+      });
+  
+      cards.forEach((card, i) => {
+        const pos = positions[i];
+        const tx = Math.round(pos.x);
+        const ty = Math.round(pos.y);
+        card.style.transform = `translate3d(${tx}px, ${ty}px, 0) rotate(${pos.rotation}deg)`;
+        card.style.zIndex = i;
+      });
+  
+      // Check for card under cursor after positions are updated
+      if (isInFanMode && lastMouseX !== -1) {
+        const elementUnderCursor = document.elementFromPoint(lastMouseX, lastMouseY);
+        const cardElement = elementUnderCursor?.closest('.card');
+        
+        // Remove hover from all other cards
+        document.querySelectorAll('.card.hovered').forEach(card => {
+          if (card !== cardElement) {
+            card.classList.remove('hovered');
           }
-          el = el.parentElement;
+        });
+        
+        // Add hover to the card under cursor
+        if (cardElement) {
+          cardElement.classList.add('hovered');
         }
       }
   
-      document.querySelectorAll('.card').forEach((card, i) => {
-        const pos = isInFanMode ? getFanPosition(i) : getStackPosition(i);
-        const tx = Math.round(pos.x);
-        const ty = Math.round(pos.y);
-        card.style.transform = `translate(${tx}px, ${ty}px) rotate(${pos.rotation}deg)`;
-        card.style.zIndex = i;
-        if (card === hoveredCard && isInFanMode) {
-          card.classList.add('hovered');
-        } else {
-          card.classList.remove('hovered');
-        }
-      });
       requestAnimationFrame(updateCards);
     }
     requestAnimationFrame(updateCards);
@@ -229,11 +254,21 @@
     });
   
     function recalcGeometry() {
-        // Update scale calculation here too
-        CARD_SCALE = Math.min(
-            window.innerHeight / 1080,
-            window.innerWidth / 1920
-        );
+        // Get the width directly from the responsive container
+        let width = document.documentElement.getBoundingClientRect().width;
+        console.log('Width:', width);
+        
+        let heightScale = window.innerHeight / 1080;
+        let widthScale = window.innerWidth / 1920;
+        
+        if (width <= 768) {
+            console.log('Mobile mode activated');
+            CARD_SCALE = Math.min(heightScale, widthScale) * 1.5;
+        } else {
+            console.log('Desktop mode activated');
+            CARD_SCALE = Math.min(heightScale, widthScale);
+        }
+        
         CARD_WIDTH = baseCardWidth * CARD_SCALE;
         CARD_HEIGHT = baseCardHeight * CARD_SCALE;
         RADIUS = baseRadius * CARD_SCALE;
@@ -251,5 +286,18 @@
       recalcGeometry();
       // (Optional) Additional initialization if needed.
     };
+
+    // Add this debugging code to see if hover is working
+    document.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            console.log('Mouse enter!');
+            card.classList.add('hovered');
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            console.log('Mouse leave!');
+            card.classList.remove('hovered');
+        });
+    });
   })();
   
