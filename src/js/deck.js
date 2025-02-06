@@ -52,17 +52,12 @@
       
       // Add this debugging code to see if hover is working
       card.addEventListener('mouseenter', () => {
-        console.log('Mouse enter!');
-        console.log('Current state:', currentState);
-        console.log('Should hover:', currentState === DeckState.FANNED);
         if (currentState === DeckState.FANNED) {
-          console.log('Adding hover class!');
           card.classList.add('hovered');
         }
       });
       
       card.addEventListener('mouseleave', () => {
-        console.log('Mouse leave!');
         card.classList.remove('hovered');
       });
       
@@ -198,7 +193,6 @@
         
         // Debug z-index for hovered cards
         if (card.classList.contains('hovered')) {
-          console.log('Hovered card z-index:', card.style.zIndex);
         }
       });
   
@@ -332,16 +326,13 @@
     function recalcGeometry() {
         // Get the width directly from the responsive container
         let width = document.documentElement.getBoundingClientRect().width;
-        console.log('Width:', width);
         
         let heightScale = window.innerHeight / 1080;
         let widthScale = window.innerWidth / 1920;
         
         if (width <= 768) {
-            console.log('Mobile mode activated');
             CARD_SCALE = Math.min(heightScale, widthScale) * 2.5;
         } else {
-            console.log('Desktop mode activated');
             CARD_SCALE = Math.min(heightScale, widthScale);
         }
         
@@ -367,7 +358,6 @@
     document.addEventListener('mousemove', (e) => {
         const elementUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
         if (elementUnderCursor?.closest('.card')) {
-            console.log('Mouse is over a card!');
         }
     });
 
