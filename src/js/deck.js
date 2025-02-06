@@ -203,25 +203,29 @@
   
     const toggleButton = document.getElementById('toggle-view');
     toggleButton.addEventListener('click', () => {
-      if (isAnimating) return;
-      isAnimating = true;
-      isInFanMode = !isInFanMode;
-      toggleButton.textContent = isInFanMode ? 'Stack Cards' : 'Fan Cards';
-      momentum = 0;
-      isDragging = false;
-      document.querySelectorAll('.card').forEach((card) => {
-        card.style.transition = 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease-out';
-      });
-      setTimeout(() => {
+        if (isAnimating) return;
+        isAnimating = true;
+        isInFanMode = !isInFanMode;
+        toggleButton.textContent = isInFanMode ? 'Stack Cards' : 'Fan Cards';
+        momentum = 0;
+        isDragging = false;
+
+        // Reduce transition time from 0.8s to 0.5s for snappier response
         document.querySelectorAll('.card').forEach((card) => {
-          if (isInFanMode) {
-            card.style.transition = 'filter 0.2s ease-out';
-          } else {
-            card.style.transition = 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease-out';
-          }
+            card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0, 0.2, 1), filter 0.2s ease-out';
         });
-        isAnimating = false;
-      }, 800);
+
+        // Reduce timeout to match new transition time
+        setTimeout(() => {
+            document.querySelectorAll('.card').forEach((card) => {
+                if (isInFanMode) {
+                    card.style.transition = 'filter 0.2s ease-out';
+                } else {
+                    card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0, 0.2, 1), filter 0.2s ease-out';
+                }
+            });
+            isAnimating = false;
+        }, 500);  // Reduced from 800 to 500 to match new transition time
     });
   
     function recalcGeometry() {

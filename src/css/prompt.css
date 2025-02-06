@@ -18,7 +18,7 @@ html, body {
   
   /* PROMPT ANIMATION – SPLIT INTO WORDS, THEN LETTERS */
   #prompt {
-    font-size: calc(2rem + 1vw);
+    font-size: calc(2.5rem + 2vw);
     font-weight: 400;
     margin-bottom: 40px;
     white-space: normal;
@@ -70,7 +70,7 @@ html, body {
     color: #fff;
     font-family: 'Spectral', serif;
     font-weight: 300;
-    font-size: calc(1.25rem + 0.5vw);  /* Increased from 1rem to 1.25rem */
+    font-size: calc(2rem + 1vw);
     line-height: 1.7;
     text-align: center;
     caret-color: #fff;
@@ -85,7 +85,7 @@ html, body {
   /* CHARACTER COUNTER */
   #char-counter {
     align-self: flex-end;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     opacity: 0.7;
     margin-top: 5px;
     display: none;
@@ -97,7 +97,7 @@ html, body {
     margin-top: 20px;
     padding: 8px 16px;
     font-family: 'Cinzel', serif;
-    font-size: 1.2rem;
+    font-size: calc(1.2rem + 0.5vw);
     background: transparent;
     border: 1px solid #fff;
     color: #fff;

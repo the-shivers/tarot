@@ -50,18 +50,19 @@ html, body {
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    padding: 12px 24px;
-    background: #1A1E2E;
-    color: white;
-    border: 2px solid #2F375A;
-    border-radius: 8px;
+    padding: 8px 16px;
+    font-family: 'Cinzel', serif;
+    font-size: calc(1.2rem + 0.5vw);
+    background: transparent;
+    border: 1px solid #fff;
+    color: #fff;
     cursor: pointer;
-    font-family: system-ui, sans-serif;
-    font-size: calc(14px + 0.5vw);  /* Responsive font size */
     z-index: 1000;
-    transition: background-color 0.2s;
+    transition: background 0.3s, color 0.3s;
   }
+  
   #toggle-view:hover {
-    background: #2F375A;
+    background: #fff;
+    color: #0d000f;
   }
   
