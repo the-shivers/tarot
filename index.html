@@ -12,13 +12,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Spectral:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- Background deck: always visible -->
+  <div id="background-deck">
+    <div id="deck"></div>
+  </div>
+
   <!-- Prompt view: initially visible -->
   <div id="prompt-view">
-    <div id="prompt">Ask the tarot an open‑ended question</div>
+    <div id="prompt">What mysteries would you like to unveil?</div>
     <div id="entry-container">
-      <textarea id="question-input" maxlength="400" autofocus placeholder="Enter your question here..."></textarea>
+      <textarea id="question-input" maxlength="150" autofocus placeholder="Ask the cards your question..."></textarea>
       <div id="char-counter"></div>
-      <button id="submit-btn">Submit</button>
+      <button id="submit-btn">Consult the Cards</button>
     </div>
   </div>
   <!-- Deck view: initially hidden -->

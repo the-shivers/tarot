@@ -66,9 +66,69 @@
       return card;
     }
 
+    let isBackgroundDeck = false;
+
+    function createBackgroundAnimation() {
+        if (!isBackgroundDeck) return;
+        
+        // Start in stack mode
+        isInFanMode = false;
+        
+        // Add mystical particles
+        const particleContainer = document.createElement('div');
+        particleContainer.className = 'particle-container';
+        
+        // Attach directly to the deck element instead of its parent
+        deck.appendChild(particleContainer);
+        
+        // Create particles with varied sizes and speeds
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'mystic-particle';
+            
+            // Randomize particle properties
+            const size = 3 + Math.random() * 4;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            
+            // Add horizontal variance centered on the deck
+            const xOffset = (Math.random() - 0.5) * CARD_WIDTH * 0.8;
+            particle.style.setProperty('--x-offset', `${xOffset}px`);
+            
+            // Randomize animation timing
+            particle.style.setProperty('--delay', `${Math.random() * 3}s`);
+            particle.style.setProperty('--duration', `${4 + Math.random() * 3}s`);
+            
+            particleContainer.appendChild(particle);
+            
+            // Create new particles periodically
+            setInterval(() => {
+                const newParticle = particle.cloneNode(true);
+                particleContainer.appendChild(newParticle);
+                setTimeout(() => {
+                    newParticle.remove();
+                }, 7000);
+            }, 3000 + Math.random() * 2000);
+        }
+    }
+
     function createAllCards() {
+      const deckElement = document.getElementById('deck');
+      if (deckElement.parentElement.id === 'background-deck') {
+        isBackgroundDeck = true;
+        CARD_SCALE *= 0.7; // Make background cards smaller
+        recalcGeometry();
+      }
+      
       for (let i = 0; i < TOTAL_CARDS; i++) {
-        deck.appendChild(createCard(i));
+        deckElement.appendChild(createCard(i));
+      }
+      
+      if (isBackgroundDeck) {
+        createBackgroundAnimation();
+        // Position deck in center
+        DECK_CENTER_X = window.innerWidth / 2 - CARD_WIDTH / 2;
+        DECK_CENTER_Y = window.innerHeight / 2 - CARD_HEIGHT / 2;
       }
     }
   
@@ -150,6 +210,12 @@
         if (cardElement) {
           cardElement.classList.add('hovered');
         }
+      }
+  
+      // Skip interaction updates if this is the background deck
+      if (isBackgroundDeck) {
+        requestAnimationFrame(updateCards);
+        return;
       }
   
       requestAnimationFrame(updateCards);
@@ -299,5 +365,16 @@
             card.classList.remove('hovered');
         });
     });
+
+    // Disable interactions for background deck
+    if (isBackgroundDeck) {
+      document.removeEventListener('mousedown', handleDragStart);
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+      document.removeEventListener('touchstart', handleDragStart);
+      document.removeEventListener('touchmove', handleDragMove);
+      document.removeEventListener('touchend', handleDragEnd);
+      window.removeEventListener('wheel', handleWheel);
+    }
   })();
   

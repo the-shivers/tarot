@@ -31,8 +31,8 @@
     const questionInput = document.getElementById('question-input');
     const submitBtn = document.getElementById('submit-btn');
     const charCounter = document.getElementById('char-counter');
-    const CHAR_LIMIT_THRESHOLD = 320;
-    const MAX_LENGTH = questionInput.maxLength;
+    const CHAR_LIMIT_THRESHOLD = 120;
+    const MAX_LENGTH = 150;
   
     function autoResize() {
       questionInput.style.height = 'auto';
