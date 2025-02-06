@@ -20,6 +20,7 @@ html, body {
     height: 100%;
   }
   
+  /* Base card styles */
   .card {
     position: absolute;
     width: var(--card-width, 175px);
@@ -27,25 +28,43 @@ html, body {
     transform-origin: center center;
     backface-visibility: hidden;
     cursor: pointer;
-    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
-    transition: transform 0.8s cubic-bezier(0.2, 0, 0.2, 1), filter 0.3s ease-out;
-    will-change: transform, filter;
+    transition: transform 0.8s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.3s ease-out;
+    will-change: transform, box-shadow;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    transform: translateZ(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    pointer-events: auto !important;
   }
   
   .card-content {
-    transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1);
+    width: 100%;
+    height: 100%;
+    transition: transform 0.2s ease-out;
     will-change: transform;
+    transform: translateZ(0);
+    pointer-events: none;
   }
   
-  .card.hovered {
-    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.25));
-    z-index: 100;
+  /* State-specific styles */
+  #deck.state-mystic {
+    animation: float 3s ease-in-out infinite;
   }
   
-  .card.hovered .card-content {
-    transform: translateY(calc(-1 * var(--hover-lift)));
+  #deck.state-fanned {
+    animation: none;
+  }
+  
+  #deck.state-fanned .card {
+    box-shadow: 0 2px 4px rgba(255, 0, 0, 0.2);
+  }
+  
+  #deck.state-fanned .card.hovered {
+    box-shadow: 0 20px 40px rgba(255, 0, 0, 0.5) !important;
+  }
+  
+  #deck.state-fanned .card.hovered .card-content {
+    transform: translateY(calc(var(--card-height) * -0.25)) translateZ(0) !important;
   }
   
   /* Toggle Button Styles */
@@ -66,16 +85,6 @@ html, body {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     outline: none;
-  }
-  
-  /* Card hover effects - these should NOT be inside a media query */
-  .card.hovered {
-    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.25));
-    z-index: 100;
-  }
-  
-  .card.hovered .card-content {
-    transform: translateY(calc(-1 * var(--hover-lift)));
   }
   
   /* Button hover effects only for desktop */

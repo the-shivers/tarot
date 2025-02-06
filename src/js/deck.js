@@ -50,17 +50,20 @@
       const svgContent = cardSvgTemplate.replace(/{patternId}/g, 'pattern-' + i);
       card.innerHTML = `<div class="card-content">${svgContent}</div>`;
       
-      // Only add hover effect when in fan mode
+      // Add this debugging code to see if hover is working
       card.addEventListener('mouseenter', () => {
-          if (isInFanMode) {
-              card.classList.add('hovered');
-          }
+        console.log('Mouse enter!');
+        console.log('Current state:', currentState);
+        console.log('Should hover:', currentState === DeckState.FANNED);
+        if (currentState === DeckState.FANNED) {
+          console.log('Adding hover class!');
+          card.classList.add('hovered');
+        }
       });
       
       card.addEventListener('mouseleave', () => {
-          if (isInFanMode) {
-              card.classList.remove('hovered');
-          }
+        console.log('Mouse leave!');
+        card.classList.remove('hovered');
       });
       
       return card;
@@ -192,6 +195,11 @@
         const ty = Math.round(pos.y);
         card.style.transform = `translate3d(${tx}px, ${ty}px, 0) rotate(${pos.rotation}deg)`;
         card.style.zIndex = i;
+        
+        // Debug z-index for hovered cards
+        if (card.classList.contains('hovered')) {
+          console.log('Hovered card z-index:', card.style.zIndex);
+        }
       });
   
       // Check for card under cursor after positions are updated
@@ -296,27 +304,29 @@
     toggleButton.addEventListener('click', () => {
         if (isAnimating) return;
         isAnimating = true;
-        isInFanMode = !isInFanMode;
-        toggleButton.textContent = isInFanMode ? 'Stack Cards' : 'Fan Cards';
+        
+        const newState = currentState === DeckState.MYSTIC ? DeckState.FANNED : DeckState.MYSTIC;
+        
+        // Apply transition
+        document.querySelectorAll('.card').forEach((card) => {
+            card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.3s ease-out';
+        });
+        
+        // Set new state
+        setDeckState(newState);
+        
+        toggleButton.textContent = newState === DeckState.FANNED ? 'Stack Cards' : 'Fan Cards';
         momentum = 0;
         isDragging = false;
 
-        // Reduce transition time from 0.8s to 0.5s for snappier response
-        document.querySelectorAll('.card').forEach((card) => {
-            card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0, 0.2, 1), filter 0.2s ease-out';
-        });
-
-        // Reduce timeout to match new transition time
         setTimeout(() => {
             document.querySelectorAll('.card').forEach((card) => {
-                if (isInFanMode) {
-                    card.style.transition = 'filter 0.2s ease-out';
-                } else {
-                    card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0, 0.2, 1), filter 0.2s ease-out';
-                }
+                card.style.transition = newState === DeckState.FANNED ? 
+                    'transform 0.2s ease-out, box-shadow 0.3s ease-out' : 
+                    'transform 0.5s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.3s ease-out';
             });
             isAnimating = false;
-        }, 500);  // Reduced from 800 to 500 to match new transition time
+        }, 500);
     });
   
     function recalcGeometry() {
@@ -353,17 +363,12 @@
       // (Optional) Additional initialization if needed.
     };
 
-    // Add this debugging code to see if hover is working
-    document.querySelectorAll('.card').forEach(card => {
-        card.addEventListener('mouseenter', () => {
-            console.log('Mouse enter!');
-            card.classList.add('hovered');
-        });
-        
-        card.addEventListener('mouseleave', () => {
-            console.log('Mouse leave!');
-            card.classList.remove('hovered');
-        });
+    // Add this debugging code to check if cards are getting events
+    document.addEventListener('mousemove', (e) => {
+        const elementUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
+        if (elementUnderCursor?.closest('.card')) {
+            console.log('Mouse is over a card!');
+        }
     });
 
     // Disable interactions for background deck
@@ -376,5 +381,75 @@
       document.removeEventListener('touchend', handleDragEnd);
       window.removeEventListener('wheel', handleWheel);
     }
-  })();
+
+    const DeckState = {
+        MYSTIC: 'mystic',
+        FANNED: 'fanned'
+    };
+
+    const DeckConfig = {
+        [DeckState.MYSTIC]: {
+            particlesEnabled: true,
+            floatingEnabled: true,
+            hoverEnabled: false,
+            dragEnabled: false,
+            scrollEnabled: false,
+            baseBoxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            hoverBoxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+        },
+        [DeckState.FANNED]: {
+            particlesEnabled: false,
+            floatingEnabled: false,
+            hoverEnabled: true,
+            dragEnabled: true,
+            scrollEnabled: true,
+            baseBoxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            hoverBoxShadow: '0 8px 16px rgba(0, 0, 0, 0.15)'
+        }
+    };
+
+    let currentState = DeckState.MYSTIC;
+
+    function setDeckState(newState) {
+        if (newState === currentState) return;
+        
+        currentState = newState;
+        const config = DeckConfig[currentState];
+        
+        // Update deck classes
+        deck.classList.remove('state-mystic', 'state-fanned');
+        deck.classList.add(`state-${currentState}`);
+        
+        // Update particle effects
+        const particleContainer = deck.querySelector('.particle-container');
+        if (particleContainer) {
+            particleContainer.style.display = config.particlesEnabled ? 'block' : 'none';
+        }
+        
+        // Update floating animation
+        deck.style.animation = config.floatingEnabled ? 'float 3s ease-in-out infinite' : 'none';
+        
+        // Update interaction flags
+        isInFanMode = newState === DeckState.FANNED;
+        
+        // Re-apply hover listeners after state change
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(card => {
+            // Remove existing listeners
+            const newCard = card.cloneNode(true);
+            card.parentNode.replaceChild(newCard, card);
+            
+            // Add new hover listeners
+            newCard.addEventListener('mouseenter', () => {
+                if (currentState === DeckState.FANNED) {
+                    newCard.classList.add('hovered');
+                }
+            });
+            
+            newCard.addEventListener('mouseleave', () => {
+                newCard.classList.remove('hovered');
+            });
+        });
+    }
+})();
   
